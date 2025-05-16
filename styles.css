@@ -1,0 +1,12 @@
+button {
+    /* ...existing code... */
+    height: 40px; /* Add a height to ensure the text is visible */
+    /* ...existing code... */
+}
+
+.screen {
+    /* Set the app window size to 528x528 */
+    width: 528px;
+    height: 528px;
+}
+
