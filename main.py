@@ -1,20 +1,18 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import threading
 import time
+import traceback
 import pyautogui
-import traceback # For printing full tracebacks
 
 class ScreenAwakeApp:
-    def __init__(self, root):
-        self.root = root
+    def __init__(self, master):
+        self.root = master
         self.root.title("Screen Awake")
-        # self.root.geometry("430x310") # Commented out: let Tkinter try to autosize
 
         self.style = ttk.Style()
         self.style.theme_use('clam')
 
-        # --- State Variables ---
         self.program_state = "idle"
         self.is_running = False
         self.time_options = ["30 sec", "1 min", "5 min", "10 min", "15 min", "30 min", "60 min"]
@@ -28,11 +26,10 @@ class ScreenAwakeApp:
         self.session_start_time_monotonic = None
         self.total_running_time_job_id = None
 
-        # --- UI Setup ---
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
 
-        self.main_frame = ttk.Frame(root, padding="15") # Reduced padding
+        self.main_frame = ttk.Frame(self.root, padding="15")
         self.main_frame.grid(row=0, column=0, sticky="nsew")
         self.main_frame.columnconfigure(0, weight=1)
 
@@ -66,14 +63,14 @@ class ScreenAwakeApp:
         self.total_running_time_label = ttk.Label(
             self.main_frame,
             text="Total Running Time: 00:00:00",
-            font=("Arial", 9), # Reduced font
+            font=("Arial", 9),
             wraplength=380
         )
         self.total_running_time_label.grid(row=current_row, column=0, pady=(5,10), sticky="ew")
         current_row += 1
 
         self.button_frame = ttk.Frame(self.main_frame)
-        self.button_frame.grid(row=current_row, column=0, pady=(5,0), sticky="ew") # Reduced pady
+        self.button_frame.grid(row=current_row, column=0, pady=(5,0), sticky="ew")
 
         self.button_frame.columnconfigure(0, weight=1)
         self.button_frame.columnconfigure(1, weight=0)
@@ -98,14 +95,10 @@ class ScreenAwakeApp:
         self.main_frame.rowconfigure(2, weight=0)
         self.main_frame.rowconfigure(3, weight=0)
         self.main_frame.rowconfigure(4, weight=0)
-        self.main_frame.rowconfigure(5, weight=0) # Total running time row
-        self.main_frame.rowconfigure(6, weight=0) # Button frame row
+        self.main_frame.rowconfigure(5, weight=0)
+        self.main_frame.rowconfigure(6, weight=0)
 
-        self.root.update_idletasks() # Force layout calculation
-        # After Tkinter calculates sizes, you could uncomment self.root.geometry if needed,
-        # or set a minsize based on calculated preferred sizes.
-        # e.g., self.root.minsize(self.main_frame.winfo_reqwidth() + 30, self.main_frame.winfo_reqheight() + 30)
-
+        self.root.update_idletasks()
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self._update_ui_states()
@@ -300,8 +293,8 @@ class ScreenAwakeApp:
                         print(f"[{time.ctime()}] WORKER: Mouse movement executed successfully.")
                     except pyautogui.FailSafeException as fse:
                         print(f"[{time.ctime()}] WORKER: PyAutoGUI FailSafeException during action: {fse}", flush=True)
-                    except Exception as e_action:
-                        print(f"[{time.ctime()}] WORKER: Exception during mouse move: {e_action}", flush=True)
+                    except OSError as e_action:
+                        print(f"[{time.ctime()}] WORKER: OSError during mouse move: {e_action}", flush=True)
                         traceback.print_exc()
                 else:
                     print(f"[{time.ctime()}] WORKER: Skipped action because program_state is '{self.program_state}', not 'running'.")
@@ -309,8 +302,8 @@ class ScreenAwakeApp:
 
             print(f"[{time.ctime()}] WORKER: self.is_running became False. Main worker loop terminating normally.")
 
-        except Exception as e_outer:
-            print(f"[{time.ctime()}] WORKER: !!! CRITICAL UNHANDLED EXCEPTION in keep_awake_loop: {e_outer} !!!", flush=True)
+        except (pyautogui.FailSafeException, OSError, tk.TclError) as e_outer:
+            print(f"[{time.ctime()}] WORKER: !!! HANDLED EXCEPTION in keep_awake_loop: {e_outer} !!!", flush=True)
             traceback.print_exc()
         finally:
             pyautogui.FAILSAFE = True
